@@ -67,6 +67,36 @@ jobs:
           cd build_app
           flutter pub add file_picker:8.3.7
 
+          # 0. 强制所有第三方插件使用 compileSdk 36（修复 file_picker 等插件 compileSdk 过低导致的 checkReleaseAarMetadata 报错）
+          if [ -f android/build.gradle.kts ]; then
+            cat << 'EOF2' >> android/build.gradle.kts
+
+          subprojects {
+              if (project.name != "app") {
+                  afterEvaluate {
+                      val androidExt = extensions.findByName("android")
+                      if (androidExt is com.android.build.gradle.BaseExtension) {
+                          androidExt.compileSdkVersion(36)
+                      }
+                  }
+              }
+          }
+          EOF2
+          elif [ -f android/build.gradle ]; then
+            cat << 'EOF2' >> android/build.gradle
+
+          subprojects { p ->
+              if (p.name != "app") {
+                  p.afterEvaluate {
+                      if (p.hasProperty("android")) {
+                          p.android.compileSdkVersion 36
+                      }
+                  }
+              }
+          }
+          EOF2
+          fi
+
           # 1. 覆盖 Flutter 主界面与通信源码
           cp ../lanbridge_android_main.dart lib/main.dart
 
